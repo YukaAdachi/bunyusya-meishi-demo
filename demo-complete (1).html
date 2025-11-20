@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺発注システム - 文優社様提案デモ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .preview-card {
+      width: 91mm;
+      height: 55mm;
+      border: 2px solid #333;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: zoom-in;
+      transition: transform 0.3s;
+    }
+    .preview-card:hover {
+      transform: scale(1.05);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <!-- 画面1: フロー選択 -->
+  <div id="screen1" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <header class="text-center py-8">
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">名刺発注システム</h1>
+      <p class="text-gray-600">文優社 × ベステラ社</p>
+      <p class="text-sm text-gray-500 mt-2">デモ版 - 提案用プロトタイプ</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">発注方法を選択してください</h2>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- 初回発注カード -->
+          <div onclick="showScreen('screen2', 'first-time')" class="cursor-pointer transform transition-all duration-200 hover:scale-105">
+            <div class="border-4 border-blue-400 rounded-xl p-6 bg-blue-50 hover:bg-blue-100">
+              <div class="text-center mb-4">
+                <span class="text-6xl">📝</span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">初回発注</h3>
+              <ul class="space-y-2 text-sm text-gray-700">
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>初めて名刺を作る方</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>総務による内容確認あり</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>丁寧な確認フロー</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 通常発注カード -->
+          <div onclick="showScreen('screen2', 'regular')" class="cursor-pointer transform transition-all duration-200 hover:scale-105">
+            <div class="border-4 border-green-400 rounded-xl p-6 bg-green-50 hover:bg-green-100">
+              <div class="text-center mb-4">
+                <span class="text-6xl">🔄</span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">通常発注(2回目以降)</h3>
+              <ul class="space-y-2 text-sm text-gray-700">
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>追加注文・再注文の方</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>簡略化されたフロー</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">✓</span>
+                  <span>スピーディーな発注</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+        <div class="flex items-start">
+          <span class="text-2xl mr-3">💡</span>
+          <div>
+            <p class="font-semibold text-gray-800 mb-1">初めての方へ</p>
+            <p class="text-sm text-gray-700">
+              初回発注では、総務担当者が内容を確認するため、安心してご利用いただけます。
+              2回目以降は、簡略化されたフローで素早く発注できます。
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 画面2: 情報入力フォーム -->
+  <div id="screen2" class="hidden min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="bg-white rounded-t-2xl shadow-xl p-6 border-b-2 border-blue-400">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">
+          <span id="flowTypeLabel">初回発注</span>
+        </h1>
+        <p class="text-gray-600 text-sm">
+          名刺情報を入力してください。<span class="text-red-500">*</span>は必須項目です。
+        </p>
+      </div>
+
+      <form id="cardForm" class="bg-white rounded-b-2xl shadow-xl p-6">
+        <!-- 基本情報 -->
+        <section class="mb-8">
+          <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <span class="text-2xl mr-2">👤</span>基本情報
+          </h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                姓 <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="lastName" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="山田" required>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                名 <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="firstName" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="太郎" required>
+            </div>
+          </div>
+        </section>
+
+        <!-- 所属情報 -->
+        <section class="mb-8">
+          <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <span class="text-2xl mr-2">🏢</span>所属情報
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                部署 <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="department" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="営業部" required>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">役職</label>
+              <input type="text" id="position" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="課長">
+            </div>
+          </div>
+        </section>
+
+        <!-- 連絡先 -->
+        <section class="mb-8">
+          <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <span class="text-2xl mr-2">📞</span>連絡先
+          </h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">電話番号</label>
+              <input type="tel" id="phone" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="03-1234-5678">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">携帯電話</label>
+              <input type="tel" id="mobile" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="090-1234-5678">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">メールアドレス</label>
+              <input type="email" id="email" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="taro.yamada@example.com">
+            </div>
+          </div>
+        </section>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mb-6">
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">💡</span>
+            <div>
+              <p class="font-semibold text-gray-800 mb-1">入力のヒント</p>
+              <ul class="text-sm text-gray-700 space-y-1">
+                <li>• 名刺に表示される情報を正確に入力してください</li>
+                <li>• 入力後、プレビュー画面で確認できます</li>
+                <li>• 誤りがあれば、いつでも修正できます</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4">
+          <button type="button" onclick="showScreen('screen1')" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all">
+            ← 戻る
+          </button>
+          <button type="submit" class="flex-1 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all shadow-lg">
+            プレビューを確認 →
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 画面3: プレビュー確認 -->
+  <div id="screen3" class="hidden min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">名刺プレビュー</h1>
+        <p class="text-gray-600 text-sm mb-6">
+          クリックすると拡大表示されます。内容をご確認の上、承認してください。
+        </p>
+
+        <!-- 名刺プレビュー -->
+        <div class="flex justify-center mb-8">
+          <div id="businessCard" class="preview-card p-6" onclick="openModal()">
+            <div class="flex flex-col h-full">
+              <div class="mb-4">
+                <div class="text-blue-600 font-bold text-xl">ベステラ株式会社</div>
+                <div class="text-xs text-gray-500">BESTERA Corporation</div>
+              </div>
+              <div class="mb-4">
+                <div class="text-2xl font-bold" id="previewName">山田 太郎</div>
+                <div class="text-sm text-gray-600" id="previewDept">営業部 課長</div>
+              </div>
+              <div class="mt-auto text-xs text-gray-700 space-y-1">
+                <div id="previewPhone">TEL: 03-1234-5678</div>
+                <div id="previewMobile">MOBILE: 090-1234-5678</div>
+                <div id="previewEmail">EMAIL: taro.yamada@example.com</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded mb-6">
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">✨</span>
+            <div>
+              <p class="font-semibold text-gray-800 mb-1">拡大機能</p>
+              <p class="text-sm text-gray-700">
+                名刺をクリックすると拡大表示されます。細かい文字もしっかり確認できます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div id="nextFlowInfo" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-6">
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">📋</span>
+            <div>
+              <p class="font-semibold text-gray-800 mb-1">次のステップ</p>
+              <p class="text-sm text-gray-700">
+                承認後、<strong>総務担当者</strong>による最終確認を経て、文優社へ発注されます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4">
+          <button onclick="showScreen('screen2')" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all">
+            ← 修正する
+          </button>
+          <button onclick="showScreen('screen4')" class="flex-1 px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-all shadow-lg">
+            この内容で承認 ✓
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画面4: 完了画面 -->
+  <div id="screen4" class="hidden min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+    <div class="max-w-2xl mx-auto mt-20">
+      <div class="bg-white rounded-2xl shadow-xl p-12 text-center">
+        <div class="text-8xl mb-6">✅</div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">発注が完了しました</h1>
+        <p class="text-gray-600 mb-8">
+          総務担当者による確認後、文優社へ発注されます。<br>
+          進捗状況は、マイページからいつでも確認できます。
+        </p>
+
+        <div class="bg-blue-50 p-6 rounded-lg mb-8">
+          <h3 class="font-bold text-gray-800 mb-3">今後の流れ</h3>
+          <div class="space-y-3 text-sm text-left">
+            <div class="flex items-start">
+              <span class="mr-3">1️⃣</span>
+              <span>総務担当者による確認</span>
+            </div>
+            <div class="flex items-start">
+              <span class="mr-3">2️⃣</span>
+              <span>文優社へ発注</span>
+            </div>
+            <div class="flex items-start">
+              <span class="mr-3">3️⃣</span>
+              <span>デザイン制作</span>
+            </div>
+            <div class="flex items-start">
+              <span class="mr-3">4️⃣</span>
+              <span>最終確認・校了</span>
+            </div>
+            <div class="flex items-start">
+              <span class="mr-3">5️⃣</span>
+              <span>印刷・納品</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="resetDemo()" class="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all shadow-lg">
+          デモをやり直す
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 拡大モーダル -->
+  <div id="modal" class="modal" onclick="closeModal()">
+    <div class="modal-content">
+      <div id="businessCardLarge" class="bg-white p-12 rounded-lg shadow-2xl" style="width: 182mm; height: 110mm;">
+        <div class="flex flex-col h-full">
+          <div class="mb-8">
+            <div class="text-blue-600 font-bold text-4xl">ベステラ株式会社</div>
+            <div class="text-xl text-gray-500">BESTERA Corporation</div>
+          </div>
+          <div class="mb-8">
+            <div class="text-5xl font-bold mb-2" id="modalName">山田 太郎</div>
+            <div class="text-2xl text-gray-600" id="modalDept">営業部 課長</div>
+          </div>
+          <div class="mt-auto text-xl text-gray-700 space-y-2">
+            <div id="modalPhone">TEL: 03-1234-5678</div>
+            <div id="modalMobile">MOBILE: 090-1234-5678</div>
+            <div id="modalEmail">EMAIL: taro.yamada@example.com</div>
+          </div>
+        </div>
+      </div>
+      <p class="text-white text-center mt-4">クリックで閉じる</p>
+    </div>
+  </div>
+
+  <script>
+    let currentFlowType = 'first-time';
+
+    function showScreen(screenId, flowType = null) {
+      document.querySelectorAll('[id^="screen"]').forEach(screen => {
+        screen.classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+      
+      if (flowType) {
+        currentFlowType = flowType;
+        const label = flowType === 'first-time' ? '初回発注' : '通常発注(2回目以降)';
+        document.getElementById('flowTypeLabel').textContent = label;
+        
+        if (flowType === 'regular') {
+          document.getElementById('nextFlowInfo').innerHTML = `
+            <div class="flex items-start">
+              <span class="text-2xl mr-3">📋</span>
+              <div>
+                <p class="font-semibold text-gray-800 mb-1">次のステップ</p>
+                <p class="text-sm text-gray-700">
+                  承認後、<strong>総務担当者</strong>による簡易確認を経て、文優社へ発注されます。(2回目以降は簡略化)
+                </p>
+              </div>
+            </div>
+          `;
+        }
+      }
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById('cardForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const lastName = document.getElementById('lastName').value;
+      const firstName = document.getElementById('firstName').value;
+      const department = document.getElementById('department').value;
+      const position = document.getElementById('position').value || '';
+      const phone = document.getElementById('phone').value || '-';
+      const mobile = document.getElementById('mobile').value || '-';
+      const email = document.getElementById('email').value || '-';
+      
+      document.getElementById('previewName').textContent = `${lastName} ${firstName}`;
+      document.getElementById('modalName').textContent = `${lastName} ${firstName}`;
+      
+      const deptText = position ? `${department} ${position}` : department;
+      document.getElementById('previewDept').textContent = deptText;
+      document.getElementById('modalDept').textContent = deptText;
+      
+      document.getElementById('previewPhone').textContent = `TEL: ${phone}`;
+      document.getElementById('modalPhone').textContent = `TEL: ${phone}`;
+      
+      document.getElementById('previewMobile').textContent = `MOBILE: ${mobile}`;
+      document.getElementById('modalMobile').textContent = `MOBILE: ${mobile}`;
+      
+      document.getElementById('previewEmail').textContent = `EMAIL: ${email}`;
+      document.getElementById('modalEmail').textContent = `EMAIL: ${email}`;
+      
+      showScreen('screen3');
+    });
+
+    function openModal() {
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    function resetDemo() {
+      document.getElementById('cardForm').reset();
+      showScreen('screen1');
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+
+</body>
+</html>
